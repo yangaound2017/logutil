@@ -10,29 +10,10 @@ __version__ = '1.0.0'
 
 
 LoggerClass = logging.getLoggerClass()
+fileHandlerFmt = "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
 
 
-class SimpleLogger(object):
-    """
-    A SimpleLogger wraps an instance of logging.Logger with name the argument filename,
-    use it like a file object calling write method.
-
-    E.g., Create and use TimedRotatingLogger:
-    >>> logger = SimpleLogger('filename')
-    >>> logger.write('msg', 'error')
-    """
-
-    def __init__(self, filename, level='debug'):
-        self.filename = filename
-        self.logger = logging.getLogger(filename)
-        self.logger.setLevel(getattr(logging, level.upper()))
-        self.logger.addHandler(logging.FileHandler(filename))
-
-    def write(self, msg, level='debug'):
-        return getattr(self.logger, level.lower())(msg)
-
-
-def make_handler(filename, capacity=1, format="[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s", **verbose):
+def make_handler(filename, capacity=1, format=fileHandlerFmt, **verbose):
     """
     Factory function that return either a new instance of ``logging.Handler`` or ``_MemoryHandler``.
 
@@ -43,11 +24,13 @@ def make_handler(filename, capacity=1, format="[%(levelname)s][%(asctime)s] at %
 
     :param capacity:
         It will be passed to create a ``_MemoryHandler`` if its value greater then 1.
+		Default value: 1
     :type capacity:
        ``int``
 
     :param format:
-        Format string for the instance of ``logging.FileHandler``, default: "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
+        Format string for the instance of ``logging.FileHandler``.
+		Default: "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
     :type format:
        ``str``
     """
@@ -61,51 +44,95 @@ def make_handler(filename, capacity=1, format="[%(levelname)s][%(asctime)s] at %
     return handler
 
 
-class TimedRotatingLogger(logging.getLoggerClass()):
+class SimpleLogger(logging.getLoggerClass()):
     """
-    This class inherits ``logging.Logger`` and extends a method named rotate_handler to auto rotate log file in time
-    depends on the argument suffixFmt. A ``TimedRotatingLogger`` just maintains a handler.
-    created by call make_handler.
+    This class inherits ``logging.Logger``, a ``logging.FileHandler`` will be created when it is instantiated.
 
-    :param file:
-        Base filename, namespace will be used if it's omitted.
-    :type file:
+    :param filename:
+        Required argument; it will be used to create a ``logging.FileHandler``
+    :type filename:
         ``basestr``
 
     :param level:
-        Keyword argument. Logger level, default: 'INFO'.
+        Optional keyword argument; Logger level.
+		Default values: 'INFO'.
     :type level:
         ``str`` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
 
-    :param suffixFmt:
-        Keyword argument. It will be used to call time.strftime(suffixFmt) to get the suffix of filename,
-        ie: filename = baseFilename + '.' + time.strftime(suffixFmt).
-        default: "%Y-%m-%d", it means that the log file will be rotate every day at midnight.
-    :type suffixFmt:
-        ``str``
-
     :param format:
-        Keyword argument. Format string for instance of ``logging.FileHandler`` created by call make_handler.
+        Optional keyword argument; Format string for instance of ``logging.FileHandler`` .
+        Default values: "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
     :type format:
        ``str``
 
     :param name:
-        Keyword argument. The name of instance of ``TimedRotatingLogger``, the argument file will be used
+        Optional keyword argument. The name of the instance of ``SimpleLogger``; the namespace will be used if
+        it is omitted.
+    :type format:
+        ``str``
+
+    E.g., Create and use SimpleLogger:
+    >>> logger = SimpleLogger('error.log')
+    >>> logger.info('msg')
+
+    E.g., specify  optional arguments:
+    >>> logger = SimpleLogger('error.log', level='INFO', format="[%(levelname)s] %(message)s", name=__name__)
+    >>> logger.info('msg')
+    """
+
+    def __init__(self, filename, level='info', format=fileHandlerFmt, name=__name__, ):
+        LoggerClass.__init__(self, name)
+        self.setLevel(getattr(logging, level.upper()))
+        handler = make_handler(os.path.abspath(filename), format=format)
+        self.addHandler(handler)
+
+
+class TimedRotatingLogger(logging.getLoggerClass()):
+    """
+    This class inherits ``logging.Logger`` and extends a method named rotate_handler to auto rotate log file in time
+    according to the argument suffixFmt. A ``TimedRotatingLogger`` just maintains one handler, 
+	others will be popped out when rotate_handler be called.
+
+    :param file:
+        Required base filename.
+    :type file:
+        ``basestr``
+
+    :param suffixFmt:
+        Optional keyword argument. It will be used to call time.strftime(suffixFmt) to get the suffix of filename,
+        filename = file + '.' + time.strftime(suffixFmt).
+        Default: "%Y-%m-%d", it means that the log file will be rotated every day at midnight.
+    :type suffixFmt:
+        ``str``
+
+    :param level:
+        Optional keyword argument; logger level.
+		Default value: 'INFO'.
+    :type level:
+        ``str`` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
+
+    :param format:
+        Optional kyword argument. Format string for instance of ``logging.FileHandler`` created by call make_handler.
+    :type format:
+       ``str``
+
+    :param name:
+        Optional keyword argument. The name of instance of ``TimedRotatingLogger``, the argument file will be used
         if it is omitted or None.
     :type format:
         ``str``
 
     E.g., Create and use TimedRotatingLogger:
-    >>> logger = TimedRotatingLogger()
+    >>> logger = TimedRotatingLogger('error_log')
     >>> logger.info('msg')
 
     E.g., specify arguments:
-    >>> logger = TimedRotatingLogger('filename', level='INFO', suffixFmt='%Y-%m-%d', name='error_log')
+    >>> logger = TimedRotatingLogger('error_log', suffixFmt='%Y-%m-%d', level='INFO', )
     >>> logger.info('msg')
     """
 
-    def __init__(self, file=__name__, level='info', suffixFmt='%Y-%m-%d', name=None, **verbose):
-        LoggerClass.__init__(self, name or file)
+    def __init__(self, file, suffixFmt='%Y-%m-%d', level='info', name=__name__, **verbose):
+        LoggerClass.__init__(self, name)
         self.handlers = list()
         self.setLevel(getattr(logging, level.upper()))
         self.__file = os.path.abspath(file)
@@ -156,9 +183,9 @@ class TimedRotatingMemoryLogger(TimedRotatingLogger):
         ``str`` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, file, **kwargs):
         kwargs.get('capacity') > 0 or kwargs.update(capacity=100)
-        super(TimedRotatingMemoryLogger, self).__init__(**kwargs)
+        super(TimedRotatingMemoryLogger, self).__init__(file, **kwargs)
 
     def flush(self):
         with self._rlock:
