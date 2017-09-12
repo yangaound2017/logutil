@@ -10,10 +10,10 @@ __version__ = '1.0.0'
 
 
 LoggerClass = logging.getLoggerClass()
-fileHandlerFmt = "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
+logRecordFmt = "[%(levelname)s][%(asctime)s] at %(module)s.py:%(lineno)s: %(message)s"
 
 
-def make_handler(filename, capacity=1, format=fileHandlerFmt, **verbose):
+def make_handler(filename, capacity=1, format=logRecordFmt, **verbose):
     """
     Factory function that return either a new instance of ``logging.Handler`` or ``_MemoryHandler``.
 
@@ -80,7 +80,7 @@ class SimpleLogger(logging.getLoggerClass()):
     >>> logger.info('msg')
     """
 
-    def __init__(self, filename, level='info', format=fileHandlerFmt, name=__name__, ):
+    def __init__(self, filename, level='info', format=logRecordFmt, name=__name__, ):
         LoggerClass.__init__(self, name)
         self.setLevel(getattr(logging, level.upper()))
         handler = make_handler(os.path.abspath(filename), format=format)
