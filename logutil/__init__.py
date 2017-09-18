@@ -153,17 +153,17 @@ class TimedRotatingMemoryLogger(TimedRotatingLogger):
         `basestr`
 
     :param capacity:
-        keyword argument, default: 100. Buffer size; if the buffering is full, the `_MemoryHandler` auto flush it.
+        Optional keyword argument, default: 100. Buffer size; if the buffering is full, the `_MemoryHandler` auto flush it.
     :type capacity:
         `int`
 
     :param flushInterval:
-        keyword argument, default: 120 second. Flush buffering if time.time() - theLastFlushTime > flushInterval.
+        Optional keyword argument, default: 120 second. Flush buffering if time.time() - theLastFlushTime > flushInterval.
     :type flushInterval:
         `int`
 
     :param flushLevel:
-        keyword argument, default: 'ERROR'. Flush buffering if the level of a logRecord greater then or equal
+        Optional keyword argument, default: 'ERROR'. Flush buffering if the level of a logRecord greater then or equal
         the argument flushLevel.
     :type flushLevel:
         `str` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
