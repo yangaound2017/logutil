@@ -201,16 +201,14 @@ class _MemoryHandler(MemoryHandler):
                 self.__condition.wait(1.0)
             except Exception:
                 self.buffer = buffered
+                time.sleep(0.01)
 
     def __flush(self, target, buffered):
         with self.__condition:
             self.__condition.notifyAll()
-        try:
-            for record in buffered:
-                target.handle(record)
-            self.__lastFlushTime = time.time()
-        except Exception:
-            pass
+        for record in buffered:
+            target.handle(record)
+        self.__lastFlushTime = time.time()
 
     def close(self):
         self.flush()
