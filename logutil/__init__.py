@@ -49,7 +49,8 @@ def make_handler(filename, capacity=1, format=logRecordFmt, **verbose):
 
 class SimpleLogger(LoggerClass):
     """
-    This class inherits `logging.Logger` or it's sub class, a `logging.FileHandler` will be created when it is instantiated.
+    This class inherits `logging.Logger` or it's sub class, a `logging.FileHandler` will be created
+    when it is instantiated.
 
     :param filename:
         Required argument; it will be used to create a `logging.FileHandler`
@@ -58,9 +59,10 @@ class SimpleLogger(LoggerClass):
 
     :param level:
         Optional keyword argument; Logger level.
-        Default value: 'INFO'.
+        Default value: logging.INFO
     :type level:
-        `str` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
+        `str` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"} or
+        `int` = {logging.DEBUG | logging.INFO | logging.WARNING | logging.CRITICAL | logging.ERROR}
 
     :param format:
         Optional keyword argument; Format string for instance of `logging.FileHandler` .
@@ -82,10 +84,10 @@ class SimpleLogger(LoggerClass):
     >>> logger.info('msg')
     """
 
-    def __init__(self, filename, level='info', format=logRecordFmt, name=__name__, **verbose):
+    def __init__(self, filename, level=logging.INFO, format=logRecordFmt, name=__name__, ):
         LoggerClass.__init__(self, name)
-        self.setLevel(getattr(logging, level.upper()))           # set level
-        self.addHandler(make_handler(filename, format=format))   # add a handler
+        self.setLevel(getattr(logging, level.upper()) if isinstance(level, basestring) else level)   # set level
+        self.addHandler(make_handler(filename, format=format))                                      # add a handler
 
 
 class TimedRotatingLogger(SimpleLogger):
@@ -95,41 +97,41 @@ class TimedRotatingLogger(SimpleLogger):
     others will be popped out when `rotate_handler()` be called.
 
     :param filename:
-        Required base filename.
+        Required argument, base filename.
     :type filename:
         `basestring`
 
     :param suffixFmt:
-        Optional keyword argument. It will be used to call time.strftime(suffixFmt) to get the suffix of full filename,
+        Optional keyword argument. It will be used to call time.strftime(suffixFmt) to get the suffix of full_filename,
         full_filename = filename + '.' + time.strftime(suffixFmt).
-        Default: "%Y-%m-%d", it means that the log file will be rotated every day at midnight.
+        Default value: "%Y-%m-%d", it means that the log file will be rotated every day at midnight.
     :type suffixFmt:
         `str`
 
-    E.g., Create and use TimedRotatingLogger:
+    E.g., Create and use `TimedRotatingLogger`:
     >>> logger = TimedRotatingLogger('error_log')
     >>> logger.info('msg')
 
-    E.g., specify arguments:
+    E.g., specify  arguments:
     >>> logger = TimedRotatingLogger('error_log', suffixFmt='%Y-%m-%d', level='INFO', )
     >>> logger.info('msg')
     """
 
-    def __init__(self, filename, suffixFmt='%Y-%m-%d', **handlerParams):
-        super(TimedRotatingLogger, self).__init__(filename + '.' + time.strftime(suffixFmt), **handlerParams)
-        self.__baseFilename = filename
-        self.__suffixFmt = suffixFmt
-        self.__suffix = time.strftime(self.__suffixFmt)
-        self.__handlerParams = handlerParams
+    def __init__(self, filename, suffixFmt='%Y-%m-%d', **kwargs):
+        super(TimedRotatingLogger, self).__init__(filename + '.' + time.strftime(suffixFmt), **kwargs)
+        self._baseFilename = filename
+        self._suffixFmt = suffixFmt
+        self._suffix = time.strftime(self._suffixFmt)
+        self._handlerParams = kwargs
         self._rLock = threading.RLock()
         self.handlers = list()
         self.rotate_handler()
 
     def handle(self, record):
-        if self.__suffix != time.strftime(self.__suffixFmt):
+        if self._suffix != time.strftime(self._suffixFmt):
             with self._rLock:
-                if self.__suffix != time.strftime(self.__suffixFmt):
-                    self.__suffix = time.strftime(self.__suffixFmt)
+                if self._suffix != time.strftime(self._suffixFmt):
+                    self._suffix = time.strftime(self._suffixFmt)
                     self.rotate_handler()
         LoggerClass.handle(self, record)
 
@@ -138,7 +140,7 @@ class TimedRotatingLogger(SimpleLogger):
             for h in self.handlers:
                 h.close()
             self.handlers = list()
-            handler = make_handler(self.__baseFilename + '.' + self.__suffix, **self.__handlerParams)
+            handler = make_handler(self._baseFilename + '.' + self._suffix, **self._handlerParams)
             self.addHandler(handler)
 
 
@@ -147,13 +149,14 @@ class TimedRotatingMemoryLogger(TimedRotatingLogger):
     This class inherits `TimedRotatingLogger` and extends a method named flush to flush buffering,
     auto flushing buffering has implemented by `_MemoryHandler`.
 
-    :param file:
-        Required base filename.
-    :type file:
-        `basestr`
+    :param filename:
+        Required argument, base filename.
+    :type filename:
+        `basestring`
 
     :param capacity:
-        Optional keyword argument, default: 100. Buffer size; if the buffering is full, the `_MemoryHandler` auto flush it.
+        Optional keyword argument, default value: 100. Buffer size; if the buffering is full, the `_MemoryHandler`
+        auto flush it.
     :type capacity:
         `int`
 
@@ -163,15 +166,17 @@ class TimedRotatingMemoryLogger(TimedRotatingLogger):
         `int`
 
     :param flushLevel:
-        Optional keyword argument, default: 'ERROR'. Flush buffering if the level of a logRecord greater then or equal
-        the argument flushLevel.
+        Optional keyword argument, default: logging.ERROR. Flush buffering if the level of a logRecord greater then or
+        equal to the argument flushLevel.
     :type flushLevel:
-        `str` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"}
+        `str` = {"DEBUG"|"INFO"|"WARNING"|"CRITICAL"|"ERROR"} or
+        `int` = {logging.DEBUG | logging.INFO | logging.WARNING | logging.CRITICAL | logging.ERROR}
     """
 
-    def __init__(self, filename, capacity=100, flushInterval=120, flushLevel='ERROR', **kwargs):
-        super(TimedRotatingMemoryLogger, self).__init__(filename, capacity=capacity, flushInterval=flushInterval,
-                                                        flushLevel=getattr(logging, flushLevel.upper()), **kwargs)
+    def __init__(self, filename, capacity=100, flushInterval=120, flushLevel=logging.ERROR, **kwargs):
+        super(TimedRotatingMemoryLogger, self).__init__(filename, **kwargs)
+        self._handlerParams.update(capacity=capacity, flushInterval=flushInterval,
+        flushLevel=getattr(logging, flushLevel.upper()) if isinstance(flushLevel, basestring) else flushLevel, )
 
     def flush(self):
         with self._rLock:
