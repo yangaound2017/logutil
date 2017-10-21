@@ -31,15 +31,13 @@ Does basic configuration for this module.
    
    
 ### class ``dbman.Connector``([file, [ID, [driver]]] ):
-This class obtains and maintains a connection to a schema.
-:param file:
-	a yaml filename or a dictionary object, `setting.file` will be used if it's omitted.
-	if the argument file is a yaml filename, loading the content as configuration.
-	the dictionary or yaml content, which will either passed directly to the underlying DBAPI
-	``connect()`` method as additional keyword arguments.
-:type file: `dict` or `basestring`
-:param ID: a string represents a schema, `setting.ID` will be used if it's omitted.
-:param driver: package name of underlying database driver that users want to use, `pymysql` will be assumed if it's omitted.
+This class obtains and maintains a connection to a schema.<br>
+argument `file` should be a yaml filename or a dictionary object, `setting.file` will be used if it's omitted.
+if the argument file is a yaml filename, loading the content as configuration.
+the dictionary or yaml content, which will either passed directly to the underlying DBAPI
+``connect()`` method as additional keyword arguments.
+argument `ID` is a string represents a schema, `setting.ID` will be used if it's omitted.
+argument `driver` is the package name of underlying database driver that clients want to use, `pymysql` will be assumed if it's omitted.
 :type driver: str` = {'pymysql' | 'MySQLdb' | 'pymssql'}
 	
 ```
@@ -53,28 +51,28 @@ This class obtains and maintains a connection to a schema.
 >>> connector.cursor()                         # call cursor factory method to obtains a new cursor object
 >>> from pymysql.cursors import DictCursor
 >>> connector.cursor(cursorclass=DictCursor)   # obtains a new customer cursor object
->>> connector._cursor.execute('select now();') # execute sql
->>> connector._cursor.fetchall()               # fetch result
 >>> connector.close()
 >>> # file is a dict
 >>> dbman.Connector(file={'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'foo'}) 
 >>> # with statement Auto close connection/Auto commit. 
 >>> with Connector() as cursor:                # with statement return cursor instead of connector
->>>		cursor.execute('select now();')
->>>		cursor.fetchall()
+>>>	  cursor.execute('select now();')
+>>>	  cursor.fetchall()
 ```
 
 ### ``Connector.connect``(driver=setting.driver, **kwargs):
 obtains a connection.
-
 ```
 >>> from dbman import Connector
 >>> Connector.connect(host='localhost', user='bob', passwd='****', port=3306, db='foo') 
 ```
 
-### class ``dbman.Manipulator``(connection=None, **kwargs):
-This class used for database I/O. argument `connection` should be a connection object, if `connection` is None, 
-`kwargs` will be passed to `dbman.Connector` to obtains a connection, otherwise wraps the `connection` and ignores `kwargs`.
+### class ``dbman.Manipulator``(connection=None, driver=None, **kwargs):
+This class inherits `dbman.Connector and add 2 methods: `fromdb` for read and `todb` for write<br />
+argument `connection` should be a connection object. 
+argument `driver` is the package name of underlying database driver that users want to use, `pymysql` will be assumed if it's omitted.
+if `connection` is `None`, `kwargs` will be passed to `dbman.Connector`` to obtains a connection, otherwise `kwargs` will be ignored.
+
 
 ### Manipulator.todb(table, table_name, mode='insert', with_header=True, slice_size=128, duplicate_key=())
 Write database method.<br />
@@ -85,6 +83,7 @@ Write database method.<br />
 	execute SQL REPLACE INTO Statement if mode equal to 'replace'.<br />
 	execute SQL INSERT ... ON DUPLICATE KEY UPDATE` Statement if mode equal to 'update'(only mysql).<br />
  	execute SQL TRUNCATE TABLE Statement and then execute SQL INSERT INTO Statement if mode equal to 'truncate'.<br />
+	create a table and insert data into it if `mode` equal to 'create'.
 :param duplicate_key: it must be present if the argument mode is 'update', otherwise it will be ignored.<br />
 :param with_header: specify True(default) if the argument table with header, otherwise specify False.<br />
 :param slice_size: the table will be sliced to many subtable with slice_size, 1 transaction for 1 subtable.<br />
