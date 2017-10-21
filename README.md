@@ -37,7 +37,7 @@ if the argument file is a yaml filename, loading the content as configuration.
 the dictionary or yaml content, which will either passed directly to the underlying DBAPI
 ``connect()`` method as additional keyword arguments.
 argument `ID` is a string represents a schema, `setting.ID` will be used if it's omitted.
-argument `driver` is the package name of underlying database driver that clients want to use, `pymysql` will be assumed if it's omitted.
+argument `driver` is a package name of underlying database driver that clients want to use, `pymysql` will be assumed if it's omitted.
 :type driver: str` = {'pymysql' | 'MySQLdb' | 'pymssql'}
 	
 ```
@@ -68,9 +68,9 @@ obtains a connection.
 ```
 
 ### class ``dbman.Manipulator``(connection=None, driver=None, **kwargs):
-This class inherits `dbman.Connector and add 2 methods: `fromdb` for read and `todb` for write<br />
+This class inherits `dbman.Connector` and add 2 methods: `fromdb()` for read and `todb()` for write<br />
 argument `connection` should be a connection object. 
-argument `driver` is the package name of underlying database driver that users want to use, `pymysql` will be assumed if it's omitted.
+argument `driver` is a package name of underlying database driver that clients want to use, `pymysql` will be assumed if it's omitted.
 if `connection` is `None`, `kwargs` will be passed to `dbman.Connector`` to obtains a connection, otherwise `kwargs` will be ignored.
 
 
