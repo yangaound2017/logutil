@@ -1,5 +1,89 @@
 # dbman
-Pure Python I/O Interface to Database Driver
+Low Level Database I/O Adapter to A Pure Python Database Driver
+
+# QuickStart
+```
+>>> # make configuration file
+>>> configuration = {
+... 'foo': {
+...     'driver': 'pymysql',
+...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'foo'},
+...     },
+... 'bar': {
+...     'driver': 'MySQLdb',
+...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'bar'},
+...     },
+... }
+>>> import yaml
+>>> with open('dbconfig.yaml', 'w') as fp:
+...     yaml.dump(configuration, fp)
+...
+>>> import dbman
+>>> manipulator = dbman.Manipulator(file='dbconfig.yaml', ID='foo')
+>>> table = [['x', 'y', 'z'], [1, 0, 0]]
+>>> manipulator.todb(table, table_name='Point', mode='create')  # create a table named 'Point' in the schema 'foo'
+>>> manipulator.fromdb('select * from Point;')
++---+---+---+
+| x | y | z |
++===+===+===+
+| 1 | 0 | 0 |
++---+---+---+
+
+>>> manipulator.todb([[2,0,0], [3, 0, 0]], table_name='Point', mode='insert', with_header=False)  # insert not header table
+2
+>>> manipulator.fromdb('select * from Point;')
++---+---+---+
+| x | y | z |
++===+===+===+
+| 1 | 0 | 0 |
++---+---+---+
+| 2 | 0 | 0 |
++---+---+---+
+| 3 | 0 | 0 |
++---+---+---+
+
+>>> manipulator.cursor().execute('ALTER TABLE `point` ADD PRIMARY KEY(`x`);')  # set field 'x' as primary key
+0
+>>> manipulator.todb([[2,5,0], [3, 5, 0]], table_name='Point', mode='replace', with_header=False)  # replace duplication
+4
+>>> manipulator.fromdb('select * from Point;')
++---+---+---+
+| x | y | z |
++===+===+===+
+| 1 | 0 | 0 |
++---+---+---+
+| 2 | 5 | 0 |
++---+---+---+
+| 3 | 5 | 0 |
++---+---+---+
+
+>>> for sql in manipulator.writer.make_sql():   # check executed sql statement
+...     print sql
+...
+REPLACE INTO Point VALUES (%s, %s, %s)
+>>> table = [['x', 'y', 'z'], [1, 9, 9], [2, 9, 9], [3, 9, 9]]
+>>> manipulator.todb(table, table_name='Point', mode='update', duplicate_key=('x', )) # updatet if duplicated otherw insert
+6
+>>> for sql in manipulator.writer.make_sql():
+...     print sql
+...
+INSERT INTO Point (y, x, z) VALUES (9, 1, 9) ON DUPLICATE KEY UPDATE y=9, z=9
+INSERT INTO Point (y, x, z) VALUES (9, 2, 9) ON DUPLICATE KEY UPDATE y=9, z=9
+INSERT INTO Point (y, x, z) VALUES (9, 3, 9) ON DUPLICATE KEY UPDATE y=9, z=9
+>>> manipulator.fromdb('select * from Point;')
++---+---+---+
+| x | y | z |
++===+===+===+
+| 1 | 9 | 9 |
++---+---+---+
+| 2 | 9 | 9 |
++---+---+---+
+| 3 | 9 | 9 |
++---+---+---+
+
+>>>
+```
+
 
 ### class ``dbman.setting``:
 Basic configuration for this module
@@ -75,8 +159,7 @@ if `connection` is `None`, `kwargs` will be passed to `dbman.Connector` to obtai
 
 
 ### Manipulator.todb(table, table_name, mode='insert', with_header=True, slice_size=128, duplicate_key=())
-Write database method.<br />
-:param table: data container, a `petl.util.base.Table` or a sequence like: [header, row1, row2...]. <br />
+:param table: data container, a `petl.util.base.Table` or a sequence like: [header, row1, row2, ...] or [row1, row2, ...].<br />
 :param table_name: the name of a table in this schema.<br />
 :param mode:<br />
 	execute SQL INSERT INTO Statement if `mode` equal to 'insert'.<br />
