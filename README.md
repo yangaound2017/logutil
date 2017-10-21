@@ -68,10 +68,10 @@ obtains a connection.
 ```
 
 ### class ``dbman.Manipulator``(connection=None, driver=None, **kwargs):
-This class inherits `dbman.Connector` and add 2 methods: `fromdb()` for read and `todb()` for write<br />
+This class inherits `dbman.Connector` and add 2 methods: `fromdb()` for read and `todb()` for write.<br />
 argument `connection` should be a connection object. 
 argument `driver` is a package name of underlying database driver that clients want to use, `pymysql` will be assumed if it's omitted.
-if `connection` is `None`, `kwargs` will be passed to `dbman.Connector`` to obtains a connection, otherwise `kwargs` will be ignored.
+if `connection` is `None`, `kwargs` will be passed to `dbman.Connector` to obtains a connection, otherwise `kwargs` will be ignored.
 
 
 ### Manipulator.todb(table, table_name, mode='insert', with_header=True, slice_size=128, duplicate_key=())
@@ -81,7 +81,7 @@ Write database method.<br />
 :param mode:<br />
 	execute SQL INSERT INTO Statement if mode equal to 'insert'.<br />
 	execute SQL REPLACE INTO Statement if mode equal to 'replace'.<br />
-	execute SQL INSERT ... ON DUPLICATE KEY UPDATE` Statement if mode equal to 'update'(only mysql).<br />
+	execute SQL INSERT ... ON DUPLICATE KEY UPDATE Statement if mode equal to 'update'(only mysql).<br />
  	execute SQL TRUNCATE TABLE Statement and then execute SQL INSERT INTO Statement if mode equal to 'truncate'.<br />
 	create a table and insert data into it if `mode` equal to 'create'.
 :param duplicate_key: it must be present if the argument mode is 'update', otherwise it will be ignored.<br />
