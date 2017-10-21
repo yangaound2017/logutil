@@ -7,11 +7,11 @@ Low Level Database I/O Adapter to A Pure Python Database Driver
 >>> configuration = {
 ... 'foo': {
 ...     'driver': 'pymysql',
-...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'foo'},
+...     'config': {'host': 'localhost', 'user': 'root', 'passwd': '', 'port': 3306, 'db':'foo'},
 ...     },
 ... 'bar': {
 ...     'driver': 'MySQLdb',
-...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'bar'},
+...     'config': {'host': 'localhost', 'user': 'root', 'passwd': '', 'port': 3306, 'db':'bar'},
 ...     },
 ... }
 >>> import yaml
@@ -28,8 +28,8 @@ Low Level Database I/O Adapter to A Pure Python Database Driver
 +===+===+===+
 | 1 | 0 | 0 |
 +---+---+---+
-
->>> manipulator.todb([[2,0,0], [3, 0, 0]], table_name='Point', mode='insert', with_header=False)  # insert not header table
+>>> # insert None header table
+>>> manipulator.todb([[2,0,0], [3, 0, 0]], table_name='Point', mode='insert', with_header=False)  
 2
 >>> manipulator.fromdb('select * from Point;')
 +---+---+---+
@@ -42,9 +42,9 @@ Low Level Database I/O Adapter to A Pure Python Database Driver
 | 3 | 0 | 0 |
 +---+---+---+
 
->>> manipulator.cursor().execute('ALTER TABLE `point` ADD PRIMARY KEY(`x`);')  # set field 'x' as primary key
+>>> manipulator.cursor().execute('ALTER TABLE `Point` ADD PRIMARY KEY(`x`);')  # set field 'x' as primary key
 0
->>> manipulator.todb([[2,5,0], [3, 5, 0]], table_name='Point', mode='replace', with_header=False)  # replace duplication
+>>> manipulator.todb([[2,5,0], [3, 5, 0]], table_name='Point', mode='replace', with_header=False) # replace duplication
 4
 >>> manipulator.fromdb('select * from Point;')
 +---+---+---+
@@ -62,7 +62,8 @@ Low Level Database I/O Adapter to A Pure Python Database Driver
 ...
 REPLACE INTO Point VALUES (%s, %s, %s)
 >>> table = [['x', 'y', 'z'], [1, 9, 9], [2, 9, 9], [3, 9, 9]]
->>> manipulator.todb(table, table_name='Point', mode='update', duplicate_key=('x', )) # updatet if duplicated otherw insert
+>>> # updatet if duplicated otherw insert
+>>> manipulator.todb(table, table_name='Point', mode='update', duplicate_key=('x', )) 
 6
 >>> for sql in manipulator.writer.make_sql():
 ...     print sql
@@ -70,6 +71,7 @@ REPLACE INTO Point VALUES (%s, %s, %s)
 INSERT INTO Point (y, x, z) VALUES (9, 1, 9) ON DUPLICATE KEY UPDATE y=9, z=9
 INSERT INTO Point (y, x, z) VALUES (9, 2, 9) ON DUPLICATE KEY UPDATE y=9, z=9
 INSERT INTO Point (y, x, z) VALUES (9, 3, 9) ON DUPLICATE KEY UPDATE y=9, z=9
+>>> # prevent sql injection
 >>> manipulator.fromdb('select * from Point;')
 +---+---+---+
 | x | y | z |
@@ -95,20 +97,6 @@ Basic configuration for this module
 ### ``dbman.base_setting``(file, ID=None, driver=None):
 Does basic configuration for this module.
 ```
->>> configuration = {
-... 'foo': {
-...     'driver': 'pymysql',
-...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'foo'},
-...     },
-... 'bar': {
-...     'driver': 'MySQLdb',
-...     'config': {'host': 'localhost', 'user': 'bob', 'passwd': '****', 'port': 3306, 'db':'bar'},
-...     },
-... }
->>> import yaml
->>> with open('dbconfig.yaml', 'w') as fp:
-...     yaml.dump(configuration, fp)
-...
 >>> import dbman
 >>> dbman.base_setting(file='dbconfig.yaml', ID='foo') 
 ```
